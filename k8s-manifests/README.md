@@ -1,4 +1,4 @@
-# Инструкция по запуску Kubernetes для приложения Стройматериалы
+# Инструкция по запуску Kubernetes для приложения BuildMaterials
 
 ## Предварительные требования
 
@@ -41,10 +41,10 @@ minikube status
 
 ```bash
 # Соберите образ Django
-docker build -t stroymaterials-django:latest .
+docker build -t buildmaterials-django:latest .
 
 # Соберите образ Nginx (предполагается, что есть Dockerfile в папке nginx/)
-docker build -t stroymaterials-nginx:latest ./nginx
+docker build -t buildmaterials-nginx:latest ./nginx
 ```
 
 ### Шаг 2: Загрузка образов в Minikube
@@ -52,8 +52,8 @@ docker build -t stroymaterials-nginx:latest ./nginx
 ```bash
 # Для Minikube
 eval $(minikube docker-env)
-docker build -t stroymaterials-django:latest .
-docker build -t stroymaterials-nginx:latest ./nginx
+docker build -t buildmaterials-django:latest .
+docker build -t buildmaterials-nginx:latest ./nginx
 ```
 
 ### Шаг 3: Применение манифестов Kubernetes
@@ -116,7 +116,7 @@ kubectl scale deployment django-deployment --replicas=2
 
 ```bash
 # Пересобрать и обновить образ
-docker build -t stroymaterials-django:latest .
+docker build -t buildmaterials-django:latest .
 kubectl rollout restart deployment django-deployment
 
 # Отслеживание статуса обновления
@@ -127,7 +127,7 @@ kubectl rollout status deployment django-deployment
 
 ```bash
 # Запустить pod для выполнения команд
-kubectl run django-migrate --image=stroymaterials-django:latest --rm -it --restart=Never -- python manage.py migrate
+kubectl run django-migrate --image=buildmaterials-django:latest --rm -it --restart=Never -- python manage.py migrate
 ```
 
 ### Импорт данных
@@ -163,7 +163,7 @@ kubectl logs <pod-name>
 kubectl exec -it <django-pod-name> -- /bin/bash
 
 # Подключиться к PostgreSQL
-kubectl exec -it <postgres-pod-name> -- psql -U stroymaterials_user -d stroymaterials_db
+kubectl exec -it <postgres-pod-name> -- psql -U buildmaterials_user -d buildmaterials_db
 ```
 
 ### Проверка здоровья
