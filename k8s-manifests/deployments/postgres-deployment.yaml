@@ -24,17 +24,17 @@ spec:
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
-              name: stroymaterials-config
+              name: buildmaterials-config
               key: POSTGRES_DB
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
-              name: stroymaterials-config
+              name: buildmaterials-config
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: stroymaterials-secrets
+              name: buildmaterials-secrets
               key: POSTGRES_PASSWORD
         volumeMounts:
         - name: postgres-storage
