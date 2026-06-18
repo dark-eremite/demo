@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-deployment
+spec:
+  replicas: 2  # Количество реплик Django для масштабируемости
+  selector:
+    matchLabels:
+      app: django
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      initContainers:
+      # Контейнер для выполнения миграций перед запуском основного приложения
+      - name: migrate-db
+        image: stroymaterials-django:latest
+        command: ["python", "manage.py", "migrate", "--noinput"]
+        envFrom:
+        - configMapRef:
+            name: stroymaterials-config
+        - secretRef:
+            name: stroymaterials-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      
+      containers:
+      - name: django
+        image: stroymaterials-django:latest
+        ports:
+        - containerPort: 8000
+          name: django-port
+        command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
+        envFrom:
+        - configMapRef:
+            name: stroymaterials-config
+        - secretRef:
+            name: stroymaterials-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: django-port
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: django-port
+          initialDelaySeconds: 10
+          periodSeconds: 10
