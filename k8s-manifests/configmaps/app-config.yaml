@@ -4,8 +4,10 @@ metadata:
   name: buildmaterials-config
 data:
   # PostgreSQL настройки
-  POSTGRES_DB: "buildmaterials_db"
-  POSTGRES_USER: "buildmaterials_user"
+  POSTGRES_DB: "buildmat_db"
+  POSTGRES_USER: "admin"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
   
   # Redis настройки
   REDIS_HOST: "redis-service"
@@ -15,4 +17,4 @@ data:
   DJANGO_SETTINGS_MODULE: "config.settings"
   PYTHONUNBUFFERED: "1"
   DEBUG: "False"
-  ALLOWED_HOSTS: "localhost,127.0.0.1,buildmaterials.local"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,buildmaterials.local,django-service"
