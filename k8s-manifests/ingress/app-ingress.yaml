@@ -1,14 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: stroymaterials-ingress
+  name: buildmaterials-ingress
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
   rules:
-  - host: stroymaterials.local
+  - host: buildmaterials.local
     http:
       paths:
       - path: /
@@ -21,5 +21,5 @@ spec:
   # В продакшене добавьте TLS конфигурацию
   # tls:
   # - hosts:
-  #   - stroymaterials.local
-  #   secretName: stroymaterials-tls
+  #   - buildmaterials.local
+  #   secretName: buildmaterials-tls

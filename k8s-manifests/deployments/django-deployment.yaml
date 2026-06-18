@@ -20,13 +20,13 @@ spec:
       initContainers:
       # Контейнер для выполнения миграций перед запуском основного приложения
       - name: migrate-db
-        image: stroymaterials-django:latest
+        image: buildmaterials-django:latest
         command: ["python", "manage.py", "migrate", "--noinput"]
         envFrom:
         - configMapRef:
-            name: stroymaterials-config
+            name: buildmaterials-config
         - secretRef:
-            name: stroymaterials-secrets
+            name: buildmaterials-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -37,16 +37,16 @@ spec:
       
       containers:
       - name: django
-        image: stroymaterials-django:latest
+        image: buildmaterials-django:latest
         ports:
         - containerPort: 8000
           name: django-port
         command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
         envFrom:
         - configMapRef:
-            name: stroymaterials-config
+            name: buildmaterials-config
         - secretRef:
-            name: stroymaterials-secrets
+            name: buildmaterials-secrets
         resources:
           requests:
             memory: "256Mi"

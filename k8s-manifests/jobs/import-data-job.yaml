@@ -7,13 +7,13 @@ spec:
     spec:
       containers:
       - name: import-data
-        image: stroymaterials-django:latest
+        image: buildmaterials-django:latest
         command: ["python", "manage.py", "import_data"]
         envFrom:
         - configMapRef:
-            name: stroymaterials-config
+            name: buildmaterials-config
         - secretRef:
-            name: stroymaterials-secrets
+            name: buildmaterials-secrets
         resources:
           requests:
             memory: "256Mi"
