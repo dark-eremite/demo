@@ -1,0 +1,32 @@
+# Используем официальный образ Python
+FROM python:3.12-slim
+
+# Устанавливаем переменные окружения
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    UV_SYSTEM_PYTHON=1
+
+# Устанавливаем uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем файлы зависимостей
+COPY pyproject.toml uv.lock ./
+
+# Устанавливаем зависимости с помощью uv
+RUN uv pip install --system -r uv.lock
+
+# Копируем весь проект
+COPY . .
+
+# Собираем статику (если нужно)
+RUN python manage.py collectstatic --noinput || true
+
+# Открываем порт
+EXPOSE 8000
+
+# Запускаем приложение через gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]
