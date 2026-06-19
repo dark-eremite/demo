@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Список заказов - СтройМатериалы{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 class="page-title" style="margin-bottom: 0;">Список заказов</h1>
+    {% if is_admin %}
+    <a href="{% url 'buildmatapp:order_create' %}" class="btn btn-success">Добавить заказ</a>
+    {% endif %}
+</div>
+
+{% if is_admin or is_manager %}
+<!-- Панель фильтров и поиска -->
+<div class="filters-bar">
+    <div class="filter-group">
+        <label for="search">Поиск</label>
+        <input type="text" id="search" placeholder="Поиск по артикулу или адресу..." value="{{ current_search }}">
+    </div>
+    
+    <div class="filter-group">
+        <label for="status">Фильтр по статусу</label>
+        <select id="status">
+            <option value="">Все статусы</option>
+            <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Ожидает обработки</option>
+            <option value="processing" {% if current_status == 'processing' %}selected{% endif %}>В обработке</option>
+            <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Выполнен</option>
+            <option value="cancelled" {% if current_status == 'cancelled' %}selected{% endif %}>Отменён</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="sort">Сортировка</label>
+        <select id="sort">
+            <option value="-order_date" {% if current_sort == '-order_date' %}selected{% endif %}>По дате заказа (новые)</option>
+            <option value="order_date" {% if current_sort == 'order_date' %}selected{% endif %}>По дате заказа (старые)</option>
+            <option value="article" {% if current_sort == 'article' %}selected{% endif %}>По артикулу (А-Я)</option>
+            <option value="-article" {% if current_sort == '-article' %}selected{% endif %}>По артикулу (Я-А)</option>
+            <option value="status" {% if current_sort == 'status' %}selected{% endif %}>По статусу (А-Я)</option>
+            <option value="-status" {% if current_sort == '-status' %}selected{% endif %}>По статусу (Я-А)</option>
+        </select>
+    </div>
+</div>
+{% endif %}
+
+<div class="table-container">
+    <table id="ordersTable">
+        <thead>
+            <tr>
+                <th>Артикул</th>
+                <th>Статус</th>
+                <th>Адрес пункта выдачи</th>
+                <th>Дата заказа</th>
+                <th>Дата выдачи</th>
+                {% if is_admin %}
+                <th>Действия</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr data-order-id="{{ order.id }}">
+                <td>{{ order.article }}</td>
+                <td>
+                    {% if order.status == 'pending' %}
+                        <span style="color: #f39c12; font-weight: bold;">Ожидает</span>
+                    {% elif order.status == 'processing' %}
+                        <span style="color: #3498db; font-weight: bold;">В обработке</span>
+                    {% elif order.status == 'completed' %}
+                        <span style="color: #27ae60; font-weight: bold;">Выполнен</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span style="color: #e74c3c; font-weight: bold;">Отменён</span>
+                    {% endif %}
+                </td>
+                <td>{{ order.pickup_address }}</td>
+                <td>{{ order.order_date|date:"d.m.Y H:i" }}</td>
+                <td>
+                    {% if order.pickup_date %}
+                        {{ order.pickup_date|date:"d.m.Y H:i" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                {% if is_admin %}
+                <td>
+                    <a href="{% url 'buildmatapp:order_edit' order.id %}" class="btn" style="padding: 5px 10px; font-size: 12px;">Ред.</a>
+                    <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="confirmDelete({{ order.id }}, '{{ order.article }}')">Удал.</button>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if is_admin %}6{% else %}5{% endif %}" style="text-align: center; padding: 20px;">Заказы не найдены</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <div class="modal-title">Подтверждение удаления</div>
+        <div class="modal-body">
+            <p>Вы уверены, что хотите удалить заказ "<span id="deleteOrderArticle"></span>"?</p>
+            <p style="color: #e74c3c;">Это действие нельзя отменить.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Отмена</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Элементы фильтров
+    const searchInput = document.getElementById('search');
+    const statusSelect = document.getElementById('status');
+    const sortSelect = document.getElementById('sort');
+
+    // Функция для применения фильтров
+    function applyFilters() {
+        const search = searchInput.value;
+        const status = statusSelect.value;
+        const sort = sortSelect.value;
+
+        // Формируем URL с параметрами
+        let url = '?';
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (status) url += `status=${status}&`;
+        url += `sort=${sort}`;
+
+        // Отправляем AJAX запрос
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Обновляем только содержимое таблицы
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTableBody = doc.querySelector('tbody');
+            const oldTableBody = document.querySelector('#ordersTable tbody');
+            
+            if (newTableBody && oldTableBody) {
+                oldTableBody.innerHTML = newTableBody.innerHTML;
+            }
+        })
+        .catch(error => console.error('Ошибка при фильтрации:', error));
+    }
+
+    // Обработчики событий для real-time фильтрации
+    searchInput.addEventListener('input', applyFilters);
+    statusSelect.addEventListener('change', applyFilters);
+    sortSelect.addEventListener('change', applyFilters);
+
+    // Модальное окно удаления
+    let deleteOrderId = null;
+
+    function confirmDelete(orderId, orderArticle) {
+        deleteOrderId = orderId;
+        document.getElementById('deleteOrderArticle').textContent = orderArticle;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        deleteOrderId = null;
+    }
+
+    // Обработчик кнопки подтверждения удаления
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (deleteOrderId) {
+            fetch(`/orders/${deleteOrderId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Удаляем строку из таблицы
+                    const row = document.querySelector(`tr[data-order-id="${deleteOrderId}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    showNotification('Заказ успешно удалён', 'success');
+                } else {
+                    showNotification(data.error || 'Ошибка при удалении', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Ошибка при удалении заказа', 'error');
+            })
+            .finally(() => {
+                closeDeleteModal();
+            });
+        }
+    });
+
+    // Функция показа уведомлений
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

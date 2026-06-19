@@ -1,301 +1,63 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход - СтройМатериалы</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "base.html" %}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: #f5f5f5;
-        }
+{% block title %}Вход - СтройМатериалы{% endblock %}
 
-        /* Верхняя полоса */
-        .top-bar {
-            height: 8px;
-            background: #2c3e50;
-        }
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 50px auto;">
+    <h2 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">Вход в систему</h2>
 
-        /* Хедер */
-        .header {
-            background: #2c3e50;
-            padding: 20px 40px;
-            display: flex;
-            align-items: center;
-        }
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
 
-        .header-title {
-            color: white;
-            font-size: 24px;
-            font-weight: 600;
-            cursor: default;
-            user-select: none;
-        }
+    <form method="post" id="loginForm">
+        {% csrf_token %}
 
-        /* Основной контент */
-        .main {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px 20px;
-        }
-
-        /* Форма входа */
-        .login-form {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .login-form h2 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #34495e;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 45px 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-            outline: none;
-        }
-
-        .form-group input:focus {
-            border-color: #2c3e50;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #7f8c8d;
-            font-size: 18px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.3s;
-        }
-
-        .toggle-password:hover {
-            color: #2c3e50;
-        }
-
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            text-align: center;
-            border: 1px solid #fcc;
-        }
-
-        .buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 30px;
-        }
-
-        .btn {
-            padding: 14px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
-            background: #2c3e50;
-            color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: #34495e;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-primary:disabled {
-            background: #bdc3c7;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .btn-secondary {
-            background: #95a5a6;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #7f8c8d;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        @media (max-width: 480px) {
-            .header {
-                padding: 15px 20px;
-            }
-
-            .header-title {
-                font-size: 20px;
-            }
-
-            .login-form {
-                padding: 30px 20px;
-            }
-
-            .login-form h2 {
-                font-size: 24px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Верхняя полоса -->
-    <div class="top-bar"></div>
-
-    <!-- Хедер -->
-    <div class="header">
-        <div class="header-title">СтройМатериалы</div>
-    </div>
-
-    <!-- Форма входа -->
-    <div class="main">
-        <div class="login-form">
-            <h2>Вход в систему</h2>
-
-            {% if error %}
-                <div class="error-message">{{ error }}</div>
-            {% endif %}
-
-            <form method="post" id="loginForm">
-                {% csrf_token %}
-
-                <div class="form-group">
-                    <label for="username">Логин</label>
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        placeholder="Введите логин"
-                        autocomplete="username"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Пароль</label>
-                    <div class="input-wrapper">
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder="Введите пароль"
-                            autocomplete="current-password"
-                        >
-                        <button type="button" class="toggle-password" id="togglePassword" title="Показать пароль">
-                            👁
-                        </button>
-                    </div>
-                </div>
-
-                <div class="buttons">
-                    <button type="submit" class="btn btn-primary" id="loginBtn" disabled>
-                        Войти
-                    </button>
-                    <a href="#" class="btn btn-secondary" id="guestBtn">
-                        Гостевой вход
-                    </a>
-                </div>
-            </form>
+        <div class="form-group">
+            <label for="username">Логин</label>
+            <input type="text" id="username" name="username" placeholder="Введите логин" autocomplete="username">
         </div>
-    </div>
 
-    <script>
-        // Элементы формы
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const loginBtn = document.getElementById('loginBtn');
-        const togglePassword = document.getElementById('togglePassword');
-        const guestBtn = document.getElementById('guestBtn');
-        const form = document.getElementById('loginForm');
+        <div class="form-group">
+            <label for="password">Пароль</label>
+            <div style="position: relative;">
+                <input type="password" id="password" name="password" placeholder="Введите пароль" autocomplete="current-password" style="padding-right: 40px;">
+                <button type="button" id="togglePassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px;">👁</button>
+            </div>
+        </div>
 
-        // Проверка полей для активации кнопки
-        function checkFields() {
-            const hasUsername = usernameInput.value.trim() !== '';
-            const hasPassword = passwordInput.value.trim() !== '';
+        <div class="form-actions">
+            <button type="submit" class="btn" id="loginBtn" disabled>Войти</button>
+            <a href="{% url 'buildmatapp:product_list' %}" class="btn btn-secondary">Гостевой вход</a>
+        </div>
+    </form>
 
-            loginBtn.disabled = !(hasUsername && hasPassword);
-        }
+    <p style="text-align: center; margin-top: 20px;">
+        Нет аккаунта? <a href="{% url 'buildmatapp:register' %}">Зарегистрироваться</a>
+    </p>
+</div>
 
-        // Слушатели ввода
-        usernameInput.addEventListener('input', checkFields);
-        passwordInput.addEventListener('input', checkFields);
+<script>
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const togglePassword = document.getElementById('togglePassword');
 
-        // Показ/скрытие пароля
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.type === 'password' ? 'text' : 'password';
-            passwordInput.type = type;
+    function checkFields() {
+        loginBtn.disabled = !(usernameInput.value.trim() !== '' && passwordInput.value.trim() !== '');
+    }
 
-            this.textContent = type === 'password' ? '👁' : '🙈';
-        });
+    usernameInput.addEventListener('input', checkFields);
+    passwordInput.addEventListener('input', checkFields);
 
-        // Гостевой вход (заглушка)
-        guestBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Здесь будет редирект на просмотр товаров
-            alert('Гостевой вход в разработке');
-        });
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        this.textContent = type === 'password' ? '👁' : '🙈';
+    });
 
-        // Отправка формы
-        form.addEventListener('submit', function() {
-            loginBtn.disabled = true;
-        });
-    </script>
-</body>
-</html>
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        loginBtn.disabled = true;
+    });
+</script>
+{% endblock %}

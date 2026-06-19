@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{% if order %}Редактирование заказа{% else %}Добавление заказа{% endif %} - СтройМатериалы{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 class="page-title" style="margin-bottom: 0;">{% if order %}Редактирование заказа{% else %}Добавление заказа{% endif %}</h1>
+    <a href="{% url 'buildmatapp:order_list' %}" class="btn btn-secondary">Назад к списку</a>
+</div>
+
+{% if errors %}
+<div class="error-message">
+    <strong>Ошибки:</strong>
+    <ul style="margin-top: 10px; padding-left: 20px;">
+        {% for error in errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+
+        {% if order %}
+        <input type="hidden" name="id" value="{{ order.id }}">
+        {% endif %}
+
+        <div class="form-group">
+            <label for="article">Артикул <span style="color: red;">*</span></label>
+            <input type="text" id="article" name="article" value="{% if order %}{{ order.article }}{% endif %}" required placeholder="Введите артикул заказа">
+            <p style="font-size: 12px; color: #666; margin-top: 5px;">Уникальный идентификатор заказа.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Статус заказа <span style="color: red;">*</span></label>
+            <select id="status" name="status" required>
+                <option value="pending" {% if order and order.status == 'pending' %}selected{% endif %}>Ожидает обработки</option>
+                <option value="processing" {% if order and order.status == 'processing' %}selected{% endif %}>В обработке</option>
+                <option value="completed" {% if order and order.status == 'completed' %}selected{% endif %}>Выполнен</option>
+                <option value="cancelled" {% if order and order.status == 'cancelled' %}selected{% endif %}>Отменён</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="pickup_address">Адрес пункта выдачи <span style="color: red;">*</span></label>
+            <input type="text" id="pickup_address" name="pickup_address" value="{% if order %}{{ order.pickup_address }}{% endif %}" required placeholder="Введите адрес пункта выдачи">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div class="form-group">
+                <label for="order_date">Дата заказа <span style="color: red;">*</span></label>
+                <input type="datetime-local" id="order_date" name="order_date" value="{% if order %}{{ order.order_date|date:"Y-m-d\TH:i" }}{% endif %}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="pickup_date">Дата выдачи</label>
+                <input type="datetime-local" id="pickup_date" name="pickup_date" value="{% if order and order.pickup_date %}{{ order.pickup_date|date:"Y-m-d\TH:i" }}{% endif %}">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">
+                {% if order %}Сохранить изменения{% else %}Добавить заказ{% endif %}
+            </button>
+            <a href="{% url 'buildmatapp:order_list' %}" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Валидация формы
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const article = document.getElementById('article').value;
+        const pickupAddress = document.getElementById('pickup_address').value;
+        const orderDate = document.getElementById('order_date').value;
+
+        // Проверка обязательных полей
+        if (!article) {
+            e.preventDefault();
+            showNotification('Артикул обязателен', 'error');
+            return;
+        }
+
+        if (!pickupAddress) {
+            e.preventDefault();
+            showNotification('Адрес пункта выдачи обязателен', 'error');
+            return;
+        }
+
+        if (!orderDate) {
+            e.preventDefault();
+            showNotification('Дата заказа обязательна', 'error');
+            return;
+        }
+    });
+
+    // Функция показа уведомлений
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

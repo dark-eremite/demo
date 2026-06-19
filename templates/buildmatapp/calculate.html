@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Расчёт материалов - СтройМатериалы{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Расчёт количества материалов</h1>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="product">Выберите продукт</label>
+            <select id="product" name="product" required>
+                <option value="">-- Выберите продукт --</option>
+                {% for product in products %}
+                <option value="{{ product.id }}">{{ product.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="quantity">Количество единиц</label>
+            <input type="number" id="quantity" name="quantity" min="1" value="1" required>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Рассчитать</button>
+        </div>
+    </form>
+</div>
+
+{% if result %}
+    {% if result.error %}
+        <div class="error-message">{{ result.error }}</div>
+    {% else %}
+        <div class="card">
+            <h3 style="margin-bottom: 15px; color: #2c3e50;">Результат расчёта</h3>
+            <p><strong>Продукт:</strong> {{ result.product.name }}</p>
+            <p><strong>Количество:</strong> {{ result.quantity }} шт.</p>
+
+            {% if result.materials %}
+            <div class="table-container" style="margin-top: 20px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Материал</th>
+                            <th>На единицу</th>
+                            <th>Всего</th>
+                            <th>Ед. изм.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in result.materials %}
+                        <tr>
+                            <td>{{ item.material.name }}</td>
+                            <td>{{ item.quantity_per_unit }}</td>
+                            <td><strong>{{ item.total_quantity }}</strong></td>
+                            <td>{{ item.material.unit }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p style="margin-top: 15px;">Для этого продукта материалы не указаны</p>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

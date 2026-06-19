@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}{% if product %}Редактирование товара{% else %}Добавление товара{% endif %} - СтройМатериалы{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 class="page-title" style="margin-bottom: 0;">{% if product %}Редактирование товара{% else %}Добавление товара{% endif %}</h1>
+    <a href="{% url 'buildmatapp:product_list' %}" class="btn btn-secondary">Назад к списку</a>
+</div>
+
+{% if errors %}
+<div class="error-message">
+    <strong>Ошибки:</strong>
+    <ul style="margin-top: 10px; padding-left: 20px;">
+        {% for error in errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="card">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if product %}
+        <input type="hidden" name="id" value="{{ product.id }}">
+        {% endif %}
+
+        <div class="form-group">
+            <label for="image">Фото товара</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            {% if product and product.image %}
+            <div style="margin-top: 10px;">
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 300px; max-height: 200px; border-radius: 4px;">
+                <p style="font-size: 12px; color: #666; margin-top: 5px;">Текущее изображение. Загрузите новое для замены.</p>
+            </div>
+            {% else %}
+            <p style="font-size: 12px; color: #666; margin-top: 5px;">Рекомендуемый размер: 300x200 пикселей. Максимальный размер файла: 5 МБ.</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="name">Наименование товара <span style="color: red;">*</span></label>
+            <input type="text" id="name" name="name" value="{% if product %}{{ product.name }}{% endif %}" required placeholder="Введите наименование товара">
+        </div>
+
+        <div class="form-group">
+            <label for="category">Категория</label>
+            <select id="category" name="category">
+                <option value="">-- Выберите категорию --</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Описание</label>
+            <textarea id="description" name="description" rows="4" placeholder="Введите описание товара">{% if product %}{{ product.description }}{% endif %}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="manufacturer">Производитель</label>
+            <select id="manufacturer" name="manufacturer">
+                <option value="">-- Выберите производителя --</option>
+                {% for m in manufacturers %}
+                <option value="{{ m.id }}" {% if product and product.manufacturer_id == m.id %}selected{% endif %}>{{ m.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="supplier">Поставщик</label>
+            <input type="text" id="supplier" name="supplier" value="{% if product %}{{ product.supplier }}{% endif %}" placeholder="Введите поставщика">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div class="form-group">
+                <label for="price">Цена (₽) <span style="color: red;">*</span></label>
+                <input type="number" id="price" name="price" step="0.01" min="0" value="{% if product %}{{ product.price }}{% endif %}" required placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label for="discount">Скидка (%)</label>
+                <input type="number" id="discount" name="discount" step="0.01" min="0" max="100" value="{% if product %}{{ product.discount }}{% endif %}" placeholder="0">
+            </div>
+
+            <div class="form-group">
+                <label for="unit">Единица измерения</label>
+                <select id="unit" name="unit">
+                    <option value="шт" {% if product and product.unit == 'шт' %}selected{% endif %}>шт</option>
+                    <option value="кг" {% if product and product.unit == 'кг' %}selected{% endif %}>кг</option>
+                    <option value="м" {% if product and product.unit == 'м' %}selected{% endif %}>м</option>
+                    <option value="м²" {% if product and product.unit == 'м²' %}selected{% endif %}>м²</option>
+                    <option value="м³" {% if product and product.unit == 'м³' %}selected{% endif %}>м³</option>
+                    <option value="л" {% if product and product.unit == 'л' %}selected{% endif %}>л</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="stock_quantity">Количество на складе <span style="color: red;">*</span></label>
+                <input type="number" id="stock_quantity" name="stock_quantity" min="0" value="{% if product %}{{ product.stock_quantity }}{% endif %}" required placeholder="0">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">
+                {% if product %}Сохранить изменения{% else %}Добавить товар{% endif %}
+            </button>
+            <a href="{% url 'buildmatapp:product_list' %}" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Валидация формы
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const price = document.getElementById('price').value;
+        const discount = document.getElementById('discount').value;
+        const stockQuantity = document.getElementById('stock_quantity').value;
+
+        // Проверка неотрицательности цены
+        if (price && parseFloat(price) < 0) {
+            e.preventDefault();
+            showNotification('Цена не может быть отрицательной', 'error');
+            return;
+        }
+
+        // Проверка скидки
+        if (discount && (parseFloat(discount) < 0 || parseFloat(discount) > 100)) {
+            e.preventDefault();
+            showNotification('Скидка должна быть от 0 до 100', 'error');
+            return;
+        }
+
+        // Проверка неотрицательности количества
+        if (stockQuantity && parseInt(stockQuantity) < 0) {
+            e.preventDefault();
+            showNotification('Количество не может быть отрицательным', 'error');
+            return;
+        }
+    });
+
+    // Функция показа уведомлений
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

@@ -16,6 +16,7 @@ COPY manage.py ./
 COPY config/ ./config/
 COPY buildmatapp/ ./buildmatapp/
 COPY templates/ ./templates/
+COPY static/ ./static/
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

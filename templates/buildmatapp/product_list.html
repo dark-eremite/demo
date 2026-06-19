@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Список товаров - СтройМатериалы{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 class="page-title" style="margin-bottom: 0;">Список товаров</h1>
+    {% if is_admin %}
+    <a href="{% url 'buildmatapp:product_create' %}" class="btn btn-success">Добавить товар</a>
+    {% endif %}
+</div>
+
+{% if is_admin or is_manager %}
+<!-- Панель фильтров и поиска -->
+<div class="filters-bar">
+    <div class="filter-group">
+        <label for="search">Поиск</label>
+        <input type="text" id="search" placeholder="Поиск по названию, категории, производителю..." value="{{ current_search }}">
+    </div>
+    
+    <div class="filter-group">
+        <label for="manufacturer">Фильтр по производителю</label>
+        <select id="manufacturer">
+            <option value="">Все производители</option>
+            {% for m in manufacturers %}
+            <option value="{{ m.id }}" {% if current_manufacturer == m.id|stringformat:"d" %}selected{% endif %}>{{ m.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="sort">Сортировка</label>
+        <select id="sort">
+            <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>По дате (новые)</option>
+            <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>По дате (старые)</option>
+            <option value="name" {% if current_sort == 'name' %}selected{% endif %}>По названию (А-Я)</option>
+            <option value="-name" {% if current_sort == '-name' %}selected{% endif %}>По названию (Я-А)</option>
+            <option value="price" {% if current_sort == 'price' %}selected{% endif %}>По цене (возр.)</option>
+            <option value="-price" {% if current_sort == '-price' %}selected{% endif %}>По цене (убыв.)</option>
+            <option value="stock_quantity" {% if current_sort == 'stock_quantity' %}selected{% endif %}>По количеству (возр.)</option>
+            <option value="-stock_quantity" {% if current_sort == '-stock_quantity' %}selected{% endif %}>По количеству (убыв.)</option>
+            <option value="discount" {% if current_sort == 'discount' %}selected{% endif %}>По скидке (возр.)</option>
+            <option value="-discount" {% if current_sort == '-discount' %}selected{% endif %}>По скидке (убыв.)</option>
+        </select>
+    </div>
+</div>
+{% endif %}
+
+<div class="table-container">
+    <table id="productsTable">
+        <thead>
+            <tr>
+                <th>Фото</th>
+                <th>Наименование</th>
+                <th>Категория</th>
+                <th>Описание</th>
+                <th>Производитель</th>
+                <th>Поставщик</th>
+                <th>Цена</th>
+                <th>Ед. изм.</th>
+                <th>На складе</th>
+                <th>Скидка</th>
+                {% if is_admin %}
+                <th>Действия</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr data-product-id="{{ product.id }}" style="{% if product.is_high_discount %}background: #F4A460;{% endif %}{% if product.is_out_of_stock %}background: #87CEEB;{% endif %}">
+                <td>
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                    {% else %}
+                        <img src="{% static 'placeholder.png' %}" alt="Нет фото" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                    {% endif %}
+                </td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category|default:"—" }}</td>
+                <td>{{ product.description|truncatewords:20 }}</td>
+                <td>{{ product.manufacturer|default:"—" }}</td>
+                <td>{{ product.supplier|default:"—" }}</td>
+                <td>
+                    {% if product.discount > 0 %}
+                        <span style="text-decoration: line-through; color: red; margin-right: 10px;">{{ product.price|floatformat:2 }} ₽</span>
+                        <span style="color: black; font-weight: bold;">{{ product.final_price|floatformat:2 }} ₽</span>
+                    {% else %}
+                        <span>{{ product.price|floatformat:2 }} ₽</span>
+                    {% endif %}
+                </td>
+                <td>{{ product.unit }}</td>
+                <td>{{ product.stock_quantity }}</td>
+                <td>
+                    {% if product.discount > 0 %}
+                        <span style="color: #e74c3c; font-weight: bold;">{{ product.discount }}%</span>
+                    {% else %}
+                        <span>0%</span>
+                    {% endif %}
+                </td>
+                {% if is_admin %}
+                <td>
+                    <a href="{% url 'buildmatapp:product_edit' product.id %}" class="btn" style="padding: 5px 10px; font-size: 12px;">Ред.</a>
+                    <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="confirmDelete({{ product.id }}, '{{ product.name }}')">Удал.</button>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if is_admin %}11{% else %}10{% endif %}" style="text-align: center; padding: 20px;">Товары не найдены</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <div class="modal-title">Подтверждение удаления</div>
+        <div class="modal-body">
+            <p>Вы уверены, что хотите удалить товар "<span id="deleteProductName"></span>"?</p>
+            <p style="color: #e74c3c;">Это действие нельзя отменить.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Отмена</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Элементы фильтров
+    const searchInput = document.getElementById('search');
+    const manufacturerSelect = document.getElementById('manufacturer');
+    const sortSelect = document.getElementById('sort');
+
+    // Функция для применения фильтров
+    function applyFilters() {
+        const search = searchInput.value;
+        const manufacturer = manufacturerSelect.value;
+        const sort = sortSelect.value;
+
+        // Формируем URL с параметрами
+        let url = '?';
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (manufacturer) url += `manufacturer=${manufacturer}&`;
+        url += `sort=${sort}`;
+
+        // Отправляем AJAX запрос
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Обновляем только содержимое таблицы
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTableBody = doc.querySelector('tbody');
+            const oldTableBody = document.querySelector('#productsTable tbody');
+            
+            if (newTableBody && oldTableBody) {
+                oldTableBody.innerHTML = newTableBody.innerHTML;
+            }
+        })
+        .catch(error => console.error('Ошибка при фильтрации:', error));
+    }
+
+    // Обработчики событий для real-time фильтрации
+    searchInput.addEventListener('input', applyFilters);
+    manufacturerSelect.addEventListener('change', applyFilters);
+    sortSelect.addEventListener('change', applyFilters);
+
+    // Модальное окно удаления
+    let deleteProductId = null;
+
+    function confirmDelete(productId, productName) {
+        deleteProductId = productId;
+        document.getElementById('deleteProductName').textContent = productName;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        deleteProductId = null;
+    }
+
+    // Обработчик кнопки подтверждения удаления
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (deleteProductId) {
+            fetch(`/products/${deleteProductId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Удаляем строку из таблицы
+                    const row = document.querySelector(`tr[data-product-id="${deleteProductId}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    showNotification('Товар успешно удалён', 'success');
+                } else {
+                    showNotification(data.error || 'Ошибка при удалении', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Ошибка при удалении товара', 'error');
+            })
+            .finally(() => {
+                closeDeleteModal();
+            });
+        }
+    });
+
+    // Функция показа уведомлений
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}
