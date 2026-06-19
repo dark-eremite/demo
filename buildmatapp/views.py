@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.views.decorators.http import require_POST
 from PIL import Image
 from io import BytesIO
 from .models import Product, ProductMaterial, CustomUser, Category, Manufacturer, Supplier, Order, OrderItem
@@ -379,14 +381,15 @@ def product_edit_view(request, product_id):
     })
 
 
+@require_POST
 @login_required
 @user_passes_test(is_admin, login_url='product_list')
 def product_delete_view(request, product_id):
     """Удаление товара (только для администратора)."""
     product = get_object_or_404(Product, id=product_id)
 
-    # Проверяем, есть ли товар в заказах
-    if ProductMaterial.objects.filter(product=product).exists():
+    # Проверяем, есть ли товар в позициях заказов
+    if OrderItem.objects.filter(product=product).exists():
         return JsonResponse({
             'success': False,
             'error': 'Нельзя удалить товар, который присутствует в заказах'
@@ -514,13 +517,27 @@ def order_create_view(request):
                 'is_authenticated': True,
             })
 
+        # Парсим даты
+        order_date_parsed = parse_datetime(order_date)
+        pickup_date_parsed = parse_datetime(pickup_date) if pickup_date else None
+
+        if not order_date_parsed:
+            return render(request, 'buildmatapp/order_form.html', {
+                'order': None,
+                'errors': ['Некорректный формат даты заказа'],
+                'is_admin': True,
+                'is_manager': False,
+                'user': request.user,
+                'is_authenticated': True,
+            })
+
         # Создаём новый заказ
         order = Order.objects.create(
             article=article,
             status=status,
             pickup_address=pickup_address,
-            order_date=order_date,
-            pickup_date=pickup_date if pickup_date else None,
+            order_date=order_date_parsed,
+            pickup_date=pickup_date_parsed,
         )
 
         return redirect('order_list')
@@ -571,12 +588,26 @@ def order_edit_view(request, order_id):
                 'is_authenticated': True,
             })
 
+        # Парсим даты
+        order_date_parsed = parse_datetime(order_date)
+        pickup_date_parsed = parse_datetime(pickup_date) if pickup_date else None
+
+        if not order_date_parsed:
+            return render(request, 'buildmatapp/order_form.html', {
+                'order': order,
+                'errors': ['Некорректный формат даты заказа'],
+                'is_admin': True,
+                'is_manager': False,
+                'user': request.user,
+                'is_authenticated': True,
+            })
+
         # Обновляем заказ
         order.article = article
         order.status = status
         order.pickup_address = pickup_address
-        order.order_date = order_date
-        order.pickup_date = pickup_date if pickup_date else None
+        order.order_date = order_date_parsed
+        order.pickup_date = pickup_date_parsed
         order.save()
 
         return redirect('order_list')
