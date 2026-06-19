@@ -24,18 +24,19 @@ spec:
                 name: app-config
             - secretRef:
                 name: app-secret
+          command: ["sh", "-c", "uv run python manage.py migrate --noinput && uv run gunicorn --bind 0.0.0.0:8000 config.wsgi:application"]
           readinessProbe:
             httpGet:
               path: /
               port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 10
+            periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /
               port: 8000
-            initialDelaySeconds: 15
-            periodSeconds: 20
+            initialDelaySeconds: 30
+            periodSeconds: 10
           resources:
             requests:
               memory: "256Mi"

@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'src.buildmatapp',
+    'buildmatapp',
 ]
 
 MIDDLEWARE = [
@@ -52,7 +52,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'src.config.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -69,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'src.config.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
@@ -81,7 +81,7 @@ DATABASES = {
         'NAME': config('POSTGRES_DB', default='buildmat_db'),
         'USER': config('POSTGRES_USER', default='root'),
         'PASSWORD': config('POSTGRES_PASSWORD', default='random_pass_1!7'),
-        'HOST': config('POSTGRES_HOST', default='postgres-service'),
+        'HOST': config('POSTGRES_HOST', default='localhost'),
         'PORT': config('POSTGRES_PORT', default='54321', cast=int),
     }
 }

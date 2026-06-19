@@ -8,18 +8,21 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 # Копируем файлы зависимостей для кэширования слоёв
 COPY pyproject.toml uv.lock ./
 
-# Устанавливаем зависимости проекта
+# Устанавливаем зависимости
 RUN uv sync --frozen --no-dev
 
-# Копируем только исходный код
-COPY src/ ./src/
+# Копируем исходный код
+COPY manage.py ./
+COPY config/ ./config/
+COPY buildmatapp/ ./buildmatapp/
+COPY templates/ ./templates/
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DJANGO_SETTINGS_MODULE=src.config.settings \
+    DJANGO_SETTINGS_MODULE=config.settings \
     HOST=0.0.0.0 \
     PORT=8000
 
 EXPOSE 8000
 
-CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:8000", "src.config.wsgi:application"]
+CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
