@@ -4,13 +4,13 @@ metadata:
   name: app-config
   namespace: buildmaterials
 data:
-  POSTGRES_HOST: "postgres-service.buildmaterials.svc.cluster.local"
+  POSTGRES_HOST: "postgres-service"
   POSTGRES_PORT: "5432"
   POSTGRES_DB: "buildmat_db"
-  REDIS_HOST: "redis-service.buildmaterials.svc.cluster.local"
-  REDIS_PORT: "6379"
+  REDIS_URL: "redis://redis-service:6379/1"
   DJANGO_DEBUG: "False"
   ALLOWED_HOSTS: "localhost,127.0.0.1,app.local"
+  CSRF_TRUSTED_ORIGINS: "https://app.local,http://app.local"
 ---
 apiVersion: v1
 kind: Secret
@@ -19,6 +19,6 @@ metadata:
   namespace: buildmaterials
 type: Opaque
 stringData:
-  POSTGRES_USER: "admin"
-  POSTGRES_PASSWORD: "securepassword123"
-  SECRET_KEY: "change-this-to-a-random-secret-key-in-production"
+  POSTGRES_USER: "root"
+  POSTGRES_PASSWORD: "random_pass_1!7"
+  SECRET_KEY: "buildmaterials_secret_key_1234567890!"

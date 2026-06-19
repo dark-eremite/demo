@@ -26,13 +26,13 @@ spec:
                 name: app-secret
           readinessProbe:
             httpGet:
-              path: /healthz/ # Или просто /, если нет спец эндпоинта
+              path: /
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthz/
+              path: /
               port: 8000
             initialDelaySeconds: 15
             periodSeconds: 20
